@@ -112,8 +112,8 @@ def check_nodes(opts, nodes, search_node = None):
 
     # check status and clusterMembership
     for couch_node in nodes:
-        if not search_node is None or couch_node["hostname"] == "%s:%s" % (opts.hostname, opts.port):
-            msg = "%s: couchbase_status=%s clusterMembership=%s" % (opts.hostname, couch_node["status"],couch_node["clusterMembership"])
+        if search_node is None or couch_node["hostname"] == "%s:%s" % (opts.hostname, opts.port):
+            msg = "%s: couchbase_status=%s clusterMembership=%s" % (couch_node["hostname"], couch_node["status"],couch_node["clusterMembership"])
             if couch_node["status"] == "healthy" and couch_node["clusterMembership"] == "active":
                 status = nagios_codes['OK']
             elif couch_node["status"] not in ("healthy", "warmup"):
@@ -165,9 +165,9 @@ def check_health(opts):
     hdd_percentage = round((hdd_used / hdd_total) * 100, 2)
 
     # We now have all needed data. Do the checking.
-    if mem_percentage >= opts.critical or hdd_percentage >= opts.critical:
+    if not opts.critical is None and (mem_percentage >= opts.critical or hdd_percentage >= opts.critical):
         status = nagios_codes['CRITICAL']
-    elif mem_percentage >= opts.warning or hdd_percentage >= opts.warning:
+    elif not opts.warning is None and (mem_percentage >= opts.warning or hdd_percentage >= opts.warning):
         status = nagios_codes['WARNING']
 
     return {'status': status, 'msg': msg % (status['desc'], 100.00 - mem_percentage, 100.00 - hdd_percentage)}
@@ -205,10 +205,10 @@ def check_xdcr(opts):
             }
 
         error_percentage = round((float(failed_chkpts['nodeStats'][node][-1]) / float(chkpts['nodeStats'][node][-1])) * 100, 2)
-        if error_percentage >= opts.critical:
+        if not opts.critical is None and error_percentage >= opts.critical:
             status = nagios_codes['CRITICAL']
             print chkpts['nodeStats'][node][-1]
-        elif error_percentage >= opts.warning:
+        elif not opts.warning is None and error_percentage >= opts.warning:
             status = nagios_codes['WARNING']
 
         if status['exit_code'] > 0:
@@ -230,7 +230,7 @@ def check_xdcr(opts):
     Get service IP from Consul
     1. Loop over Consul hosts
     2. Break when we get an answer
-    3. Return first IP
+    3. Return first IP for requested service
 """
 def ask_consul(opts):
     consul_hostname = "consul.%s.dealnews.net" % opts.consul_loc
@@ -263,12 +263,12 @@ def check_options(opts):
     if opts.username == None or opts.password == None:
         msg = "must pass username AND password"
 
-    if opts.check_type == 'health' or opts.check_type == 'xdcr':
-        if opts.critical == None or opts.warning == None:
-            msg = "please provide critical and warning values (percentage used mem or hdd)"
+    #if opts.check_type == 'health' or opts.check_type == 'xdcr':
+    #    if opts.critical == None or opts.warning == None:
+    #        msg = "please provide critical and warning values (percentage used mem or hdd)"
 
-        if opts.critical < opts.warning:
-            msg = "critical value must be larger than warning"
+    if (not opts.critical is None and not opts.warning is None) and opts.critical < opts.warning:
+        msg = "critical value must be larger than warning"
 
     if opts.check_type == None:
         msg = "check status or check health options must be provided"
