@@ -43,9 +43,11 @@ Version: 1.0
 
 from optparse import OptionParser
 from optparse import OptionGroup
-import requests
 import sys
 import urllib
+import urllib2
+import base64
+import json
 from subprocess import check_output
 
 nagios_codes = {
@@ -84,24 +86,28 @@ def print_output(msg):
     Do GET request
 """
 def do_get(opts, url_pieces):
-    url  = "http://%s:%s/%s" % (opts.hostname, opts.port, '/'.join(url_pieces))
+    url    = "http://%s:%s/%s" % (opts.hostname, opts.port, '/'.join(url_pieces))
     status = nagios_codes['UNKNOWN']
-    json = None
-    req  = None
+    j      = None
+    req    = None
+    msg    = None
+
+    req = urllib2.Request(url)
+    base64string = base64.b64encode('%s:%s' % (opts.username, opts.password))
+    req.add_header('Authorization', 'Basic %s' % base64string)
 
     try:
-        req = requests.get(url, auth=(opts.username, opts.password))
-    except Exception:
-        print("%s - error retrieving %s" % (status['desc'], url))
+        j = json.loads(urllib2.urlopen(req).read())
+    except urllib2.HTTPError, err:
+        msg = "error code: %s" % err.code
+    except urllib2.URLError, err:
+        msg = "reason: %s" % err.reason
+
+    if not msg is None:
+        print "%s - error retrieving %s, %s" % (status['desc'], url, msg)
         sys.exit(status['exit_code'])
 
-    try:
-        json = req.json()
-    except Exception:
-        print("%s - exception parsing JSON response" % status['desc'])
-        sys.exit(status['exit_code'])
-
-    return json
+    return j
 
 """
     Check to make sure (each) node is active and healthy
