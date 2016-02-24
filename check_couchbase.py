@@ -37,7 +37,17 @@ See ./check_couchbase.py -h for detailed options list
 Author: Grzegorz "You can call me Greg" Adamowicz (gadamowicz@gstlt.info)
 URL: http://gstlt.info
 
-Version: 1.0
+Version: 1.1
+
+/etc/nagios/contrib/check_couchbase.py -k $ARG1$ -l $ARG2$ -p $ARG3$ $ARG4$
+
+Examples:
+
+ Check xdcr health
+ $ ./check_couchbase.py -s couchbase -l atl -k xdcr
+
+ Check cluster health
+ $ ./check_couchbase.py -s couchbase -l atl -k health
 
 """
 
@@ -312,7 +322,7 @@ Check health/status of Couchbase cluster/node
     host_api.add_option("-l", "--consul-loc", dest="consul_loc", help="Consul location, must be one of: %s" % ', '.join(consul_locations), type="string", action="callback", callback=lower_option)
     host_api.add_option("-s", "--consul-svc", dest="consul_svc", help="Consul service (default: couchbase)", default="couchbase", type="string", action="callback", callback=lower_option)
     host_api.add_option("-P", "--port", dest="port", default="8091", help="API port (default: 8091)")
-    host_api.add_option("-u", "--username", dest="username", default="couchbase", help="User name used to connect to Couchbase server (default: couchbase)")
+    host_api.add_option("-u", "--username", dest="username", help="User name used to connect to Couchbase server")
     host_api.add_option("-p", "--password", dest="password", help="Password")
     parser.add_option_group(host_api)
 
