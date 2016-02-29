@@ -37,7 +37,7 @@ See ./check_couchbase.py -h for detailed options list
 Author: Grzegorz "You can call me Greg" Adamowicz (gadamowicz@gstlt.info)
 URL: http://gstlt.info
 
-Version: 1.1
+Version: 1.2
 
 /etc/nagios/contrib/check_couchbase.py -k $ARG1$ -l $ARG2$ -p $ARG3$ $ARG4$
 
@@ -220,7 +220,10 @@ def check_xdcr(opts):
                 'msg': "UNKNOWN - something went wrong, do the source and destination buckets (%s, %s) exist?" % (opts.source_bucket, opts.dest_bucket)
             }
 
-        error_percentage = round((float(failed_chkpts['nodeStats'][node][-1]) / float(chkpts['nodeStats'][node][-1])) * 100, 2)
+        error_percentage = 0
+        if chkpts['nodeStats'][node][-1] > 0:
+            error_percentage = round((float(failed_chkpts['nodeStats'][node][-1]) / float(chkpts['nodeStats'][node][-1])) * 100, 2)
+
         if not opts.critical is None and error_percentage >= opts.critical:
             status = nagios_codes['CRITICAL']
             print chkpts['nodeStats'][node][-1]
